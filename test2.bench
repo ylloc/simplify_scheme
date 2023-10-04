@@ -1,0 +1,8 @@
+INPUT(1)
+INPUT(2)
+INPUT(3)
+
+OUTPUT(6)
+4 = AND(1, 2)
+5 = XOR(3, 3)
+6 = OR(4, 5)
