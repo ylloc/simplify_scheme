@@ -9,6 +9,7 @@ def read_bench(filename):
 
     gates_dict: typing.Dict[str, int] = {}
     inputs, outputs, gates = [], [], []
+    num_outputs = 0
     num_gates = 1
     for line in lines:
         line = line.strip()
@@ -22,7 +23,7 @@ def read_bench(filename):
         elif line.startswith('OUTPUT'):
             name = line.split('(')[1].split(')')[0]
             outputs.append(name)
-            gates.insert(0, Gate(name, Op.OUTPUT, line.strip(), []))
+            gates.insert(num_outputs, Gate(name, Op.OUTPUT, line.strip(), []))
             gates_dict[name] = 0
         elif '=' in line:
             gate_name, gate_expression = line.split('=')
@@ -109,8 +110,10 @@ class Scheme:
         self.dfs_unused()
 
     def dfs_unused(self):
-        stack = [0]
-        self.used[0] = True
+        stack = list(range(len(self.outputs)))
+        for i in range(len(self.outputs)):
+            self.used[i] = True
+
         while stack:
             top = stack.pop()
             for v in self.gates[top].expression_inputs:
@@ -187,7 +190,7 @@ class Scheme:
             if self.gates[idx].op == Op.XOR:
                 if self.gate_by_name(self.gates[idx].expression_inputs[0]).name == \
                         self.gate_by_name(self.gates[idx].expression_inputs[1]).name:
-                    self.gates[idx].op = Op.ONE
+                    self.gates[idx].op = Op.ZERO
                     self.gates[idx].expression = "ZERO" if self.gates[idx].op == Op.ZERO else "ONE"
                     self.gates[idx].expression_inputs = []
 
@@ -204,13 +207,19 @@ class Scheme:
                     self.gates[idx].op = Op.ONE
                     self.gates[idx].expression = "ZERO" if self.gates[idx].op == Op.ZERO else "ONE"
                     self.gates[idx].expression_inputs = []
+            if self.gates[idx].op == Op.AND:
+                if self.gate_by_name(self.gates[idx].expression_inputs[0]).op == Op.ZERO or \
+                        self.gate_by_name(self.gates[idx].expression_inputs[1]).op == Op.ZERO:
+                    self.gates[idx].op = Op.ZERO
+                    self.gates[idx].expression = "ZERO" if self.gates[idx].op == Op.ZERO else "ONE"
+                    self.gates[idx].expression_inputs = []
 
 
 if __name__ == "__main__":
     args = sys.argv
     args.pop(0)
 
-    gates = (read_bench("test1.bench"))
+    gates = (read_bench("test2.bench"))
     scheme = Scheme(gates[2], gates[3], gates[0], gates[1])
     n = len(scheme.outputs)
     for i in range(n):
